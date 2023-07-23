@@ -2,6 +2,7 @@
 
 [![Package Version](https://img.shields.io/hexpm/v/edit_distance)](https://hex.pm/packages/edit_distance)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/edit_distance/)
+![CI](https://github.com/giacomocavalieri/edit_distance/workflows/CI/badge.svg?branch=main)
 
 📝 A pure Gleam package to compute the [edit distance](https://en.wikipedia.org/wiki/Edit_distance) of two strings
 

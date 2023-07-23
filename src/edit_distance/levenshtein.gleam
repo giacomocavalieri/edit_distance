@@ -3,6 +3,21 @@ import gleam/list
 import gleam/result
 import gleam/string
 
+/// Compute the edit distance between two strings using the
+/// [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance).
+/// 
+/// ## Examples
+/// 
+/// ```gleam
+/// > distance("gleam", "beam")
+/// 2
+/// ```
+/// 
+/// ```gleam
+/// > distance("cat", "cap")
+/// 1
+/// ```
+/// 
 pub fn distance(one: String, other: String) -> Int {
   case one, other {
     _, _ if one == other -> 0
