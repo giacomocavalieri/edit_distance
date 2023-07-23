@@ -5,7 +5,7 @@
 
 > ⚙️ This package supports the Erlang and JavaScript targets!
 
-A pure-Gleam package to compute the [edit distance](https://en.wikipedia.org/wiki/Edit_distance) of two strings.
+📝 A pure Gleam package to compute the [edit distance](https://en.wikipedia.org/wiki/Edit_distance) of two strings.
 
 ## Installation
 
