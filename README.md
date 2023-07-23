@@ -3,9 +3,9 @@
 [![Package Version](https://img.shields.io/hexpm/v/edit_distance)](https://hex.pm/packages/edit_distance)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/edit_distance/)
 
-> ⚙️ This package supports the Erlang and JavaScript targets!
+📝 A pure Gleam package to compute the [edit distance](https://en.wikipedia.org/wiki/Edit_distance) of two strings
 
-📝 A pure Gleam package to compute the [edit distance](https://en.wikipedia.org/wiki/Edit_distance) of two strings.
+> ⚙️ This package supports the Erlang and JavaScript targets!
 
 ## Installation
 
@@ -20,9 +20,9 @@ gleam add edit_distance
 To use the package, you can import the module corresponding to one of the metrics and call the `distance` function. For example, to compute the edit distance of two strings using the Levenshtein distance you can:
 
 ```gleam
-> import edit_distance/levenshtein
-> levenshtein.distance("gleam", "beam")
-2
+import edit_distance/levenshtein
+levenshtein.distance("gleam", "beam")
+// -> 2
 ```
 
 ## Future plans
