@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## v2.0.0 - 2023-11-02
 
-- Update package to use Gleam 0.31
+- Update package to use Gleam 0.32
 
 ## v1.0.0 - 2023-07-23
 
