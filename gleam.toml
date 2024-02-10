@@ -1,5 +1,5 @@
 name = "edit_distance"
-version = "2.0.0"
+version = "2.0.1"
 description = "A pure Gleam package to compute the edit distance of two strings"
 
 licences = ["Apache-2.0"]
