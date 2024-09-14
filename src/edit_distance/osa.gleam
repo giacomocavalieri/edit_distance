@@ -1,7 +1,7 @@
-import gleam/dict
+import gleam/dict.{type Dict}
 import gleam/int
+import gleam/io
 import gleam/list
-import gleam/result
 import gleam/string
 
 /// Compute the edit distance between two strings using the Restricted Damerau–Levenshtein, also
@@ -29,14 +29,15 @@ import gleam/string
 /// 
 pub fn distance(one: String, other: String) -> Int {
   case one, other {
-    // Base case: Both strings are empty, so the distance is 0
+    // Case: Both strings are empty, so the distance is 0
     "", "" -> 0
 
-    // Case: One string is empty, distance is the length of the other (insertion cost)
+    // Case: One string is empty, so the distance is the length of the other. That is, equal to the
+    // cost of inserting all characters of the 'other' string and vice versa
     "", _ -> string.length(other)
     _, "" -> string.length(one)
 
-    // Case: Strings are identical, no cost
+    // Case: Strings are identical, so the distance is 0
     one, other if one == other -> 0
 
     // General case: Compute the Restricted Damerau-Levenshtein distance recursively
@@ -45,149 +46,158 @@ pub fn distance(one: String, other: String) -> Int {
 }
 
 fn calculate_distance(one: String, other: String) -> Int {
-  let n = string.length(one)
-  let m = string.length(other)
+  let m = string.length(one)
+  let n = string.length(other)
 
-  // Convert both strings to dictionaries for key-value access
+  // Convert both strings to dictionaries for key-value (index-character) access
+  // Indexing starts from 0. The indices are:
+  // - 0 to m - 1 for 'one' 
+  // - 0 to n - 1 for 'other'
   let one_dict = string_to_dict(one)
   let other_dict = string_to_dict(other)
 
-  // Initialize a matrix to store distance calculations
-  let distance_dict = init_dict(n, m)
+  // Initialize a dictionary, representing a (distance) matrix, to store distance calculations
+  // Each key is a tuple (i, j) where i and j represent the lengths of substrings
+  // Each corresponding value represents the minimum cost to transform one substring into the
+  // other, using a set of allowed operations
+  let distance_dict = dict.new()
 
-  // Compute the final distances between substrings
+  // Compute the distances between substrings
   let distance_dict =
-    compute_distances(one_dict, other_dict, distance_dict, n, m)
+    compute_distances(one_dict, other_dict, distance_dict, m, n)
 
-  // Return the final distance between the full strings
-  let assert Ok(result) = dict.get(distance_dict, #(n, m))
+  // Retrieve the final distance between the full strings
+  let assert Ok(result) = dict.get(distance_dict, #(m, n))
   result
 }
 
-fn string_to_dict(str: String) -> dict.Dict(Int, String) {
-  // Convert the string to a list of strings and build a dictionary
+// A function that converts a string into a dictionary of key-value (index-character) pairs
+fn string_to_dict(str: String) -> Dict(Int, String) {
+  // Split the string into its graphemes
   let string_graphemes = string.to_graphemes(str)
+
+  // Build a list of tuples where each tuple contains an index and the corresponding character
   let string_dict =
     list.index_fold(string_graphemes, [], fn(acc, item, i) {
       [#(i, item), ..acc]
     })
 
-  // Create a dictionary where keys are indices and values are strings
+  // Convert the list of index-character tuples into a dictionary
   dict.from_list(string_dict)
 }
 
-fn init_dict(n: Int, m: Int) -> dict.Dict(#(Int, Int), Int) {
-  let matrix =
-    list.fold(list.range(0, n), [], fn(outer_acc, i) {
-      list.fold(list.range(0, m), outer_acc, fn(inner_acc, j) {
-        // Base cases: Filling the first row and column with distances
-        // corresponding to the insertion and deletion operations
-        case i == 0, j == 0 {
-          True, _ -> {
-            [#(#(i, j), j), ..inner_acc]
-          }
-          _, True -> {
-            [#(#(i, j), i), ..inner_acc]
-          }
-          // Initialize the rest of the matrix with 0.0
-          False, False -> [#(#(i, j), 0), ..inner_acc]
-        }
-      })
-    })
-
-  // Convert the initialized matrix to a dictionary
-  dict.from_list(matrix)
+// A function that gets the minimum of three values (used for the recursive case)
+fn min_three(v1: Int, v2: Int, v3: Int) -> Int {
+  int.min(v1, int.min(v2, v3))
 }
 
-// Helper function to get the minimum of three values (used for the recursive case)
-fn min_three(a: Int, b: Int, c: Int) -> Int {
-  int.min(a, int.min(b, c))
-}
-
-// Calculate the basic edit distance using insertion, deletion, and substitution costs
-fn compute_cost(
-  one: dict.Dict(Int, String),
-  other: dict.Dict(Int, String),
-  d: dict.Dict(#(Int, Int), Int),
+// A function that checks if two characters match and returns the appropriate cost
+fn match_cost(
+  one: Dict(Int, String),
   i: Int,
+  other: Dict(Int, String),
   j: Int,
 ) -> Int {
-  // Cost is 1 if characters do not match, 0 if they do
-  let cost = case dict.get(one, i - 1), dict.get(other, j - 1) {
+  // Return 1 if characters at positions i and j do not match, otherwise returns 0
+  case dict.get(one, i), dict.get(other, j) {
     Ok(c0), Ok(c1) if c0 != c1 -> 1
     _, _ -> 0
   }
-
-  // Calculate the minimum distance by considering deletion, insertion, and substitution
-  let d_ij_1 = dict.get(d, #(i - 1, j - 1)) |> result.unwrap(0)
-  let d_i_j1 = dict.get(d, #(i, j - 1)) |> result.unwrap(0)
-  let d_i1_j = dict.get(d, #(i - 1, j)) |> result.unwrap(0)
-
-  // Return the minimum of the three options (deletion, insertion, substitution)
-  min_three(d_ij_1 + cost, d_i_j1 + 1, d_i1_j + 1)
 }
 
-// Handle transpositions: if two adjacent characters are swapped
-fn check_transposition(
-  one: dict.Dict(Int, String),
-  other: dict.Dict(Int, String),
-  d: dict.Dict(#(Int, Int), Int),
+// A function that calculates the edit distance taking into account edit operations: 
+// - insertion
+// - deletion
+// - substitution
+// - limited transposition
+fn compute_cost(
+  one: Dict(Int, String),
+  other: Dict(Int, String),
+  d: Dict(#(Int, Int), Int),
   i: Int,
   j: Int,
 ) -> Int {
-  case i <= 1 || j <= 1 {
-    // Return early if transposition is not possible (i or j are too small)
-    True -> dict.get(d, #(i, j)) |> result.unwrap(0)
+  let cost = match_cost(one, i - 1, other, j - 1)
+  // Calculate deletion cost
+  let d_i1j = get_cost(d, i - 1, j) + 1
+  // Calculate insertion cost
+  let d_ij1 = get_cost(d, i, j - 1) + 1
+  // Calculate substitution cost
+  let d_i1j1 = get_cost(d, i - 1, j - 1) + cost
 
-    // Otherwise, check for transpositions
-    False -> {
-      let one_i1 = dict.get(one, i - 1)
-      let other_j1 = dict.get(other, j - 1)
-      let one_i2 = dict.get(one, i - 2)
-      let other_j2 = dict.get(other, j - 2)
-      let d_prev = dict.get(d, #(i - 2, j - 2))
-      let d_current = dict.get(d, #(i, j))
+  // Find the minimum cost between insertion, deletion, and substitution
+  let min_cost = min_three(d_i1j, d_ij1, d_i1j1)
 
-      // Case: If a transposition is found, compare the distance with the normal edit distance
-      case one_i1, other_j2, one_i2, other_j1, d_prev, d_current {
-        Ok(c0), Ok(c1), Ok(c2), Ok(c3), Ok(prev_distance), Ok(current_distance)
-          if c0 == c1 && c2 == c3
-        -> {
-          let transposition_cost = prev_distance + 1
-          int.min(current_distance, transposition_cost)
-        }
-        Ok(_), Ok(_), Ok(_), Ok(_), _, Ok(current_distance) -> current_distance
-        _, _, _, _, _, _ -> dict.get(d, #(i, j)) |> result.unwrap(0)
+  // Finally, take into account the cost of a transposition
+  let updated_cost = case i > 1 && j > 1 {
+    True -> {
+      case check_transposition(one, i - 1, other, j - 1) {
+        True -> int.min(min_cost, get_cost(d, i - 2, j - 2) + 1)
+        False -> min_cost
       }
     }
+    False -> min_cost
+  }
+  updated_cost
+}
+
+// A function that retrieves an edit cost from the dictionary representing a distance matrix.
+// The function retrieves the cost using the tuple (row_index, column_index) as the key. 
+// The value corresponds to the distance calculated between the substrings: 
+// - 'one' (from position 0 to row_index)
+// - 'other' (from position 0 to column_index) 
+// Since the matrix (and thus the dictionary) is processed iteratively (row-wise and column-wise), 
+// the value at index (row_index, column_index), where row_index < i and column_index < j, 
+// will already be present in the matrix by the time we calculate the value for entry (i, j). We 
+// can thus access this entry with confidence
+fn get_cost(d: Dict(#(Int, Int), Int), row: Int, column: Int) -> Int {
+  let assert Ok(cost) = dict.get(d, #(row, column))
+  cost
+}
+
+// Check if a transposition is valid by comparing adjacent characters in both strings
+fn check_transposition(
+  one: Dict(Int, String),
+  i: Int,
+  other: Dict(Int, String),
+  j: Int,
+) -> Bool {
+  let one_i = dict.get(one, i)
+  let other_j = dict.get(other, j)
+  let one_i1 = dict.get(one, i - 1)
+  let other_j1 = dict.get(other, j - 1)
+
+  // Check if transposing adjacent characters results in a match
+  case one_i, other_j1, one_i1, other_j {
+    Ok(c0), Ok(c1), Ok(c2), Ok(c3) if c0 == c1 && c2 == c3 -> True
+    _, _, _, _ -> False
   }
 }
 
-// Compute the distance by combining all costs: insertion, deletion, substitution, and transposition
+// Compute the edit distance by filling the distance matrix with the minimum costs
 fn compute_distances(
-  one: dict.Dict(Int, String),
-  other: dict.Dict(Int, String),
-  d: dict.Dict(#(Int, Int), Int),
-  n: Int,
+  one: Dict(Int, String),
+  other: Dict(Int, String),
+  d: Dict(#(Int, Int), Int),
   m: Int,
-) -> dict.Dict(#(Int, Int), Int) {
-  // Iterate over the matrix, updating distances
-  list.fold(list.range(1, n), d, fn(acc_d, i) {
-    list.fold(list.range(1, m), acc_d, fn(inner_d, j) {
-      // Calculate basic cost (insertion, deletion, substitution)
-      let cost = compute_cost(one, other, inner_d, i, j)
+  n: Int,
+) -> Dict(#(Int, Int), Int) {
+  // Initialize base cases, to avoid continuously checking these later on
+  // Fixing i = 0 or j = 0, set the value of transforming one string into the other
+  let d = {
+    use acc_d, i <- list.fold(list.range(0, m), d)
+    dict.insert(acc_d, #(i, 0), i)
+  }
+  let d = {
+    use acc_d, j <- list.fold(list.range(0, n), d)
+    dict.insert(acc_d, #(0, j), j)
+  }
 
-      // Update the distance dictionary with the computed cost
-      let updated_d = dict.insert(inner_d, #(i, j), cost)
-
-      // Check for transpositions to update the distances
-      let final_d =
-        dict.insert(
-          updated_d,
-          #(i, j),
-          check_transposition(one, other, updated_d, i, j),
-        )
-      final_d
-    })
-  })
+  // Iterate over the matrix to calculate the minimum costs for all substrings
+  use acc_d, i <- list.fold(list.range(1, m), d)
+  use inner_d, j <- list.fold(list.range(1, n), acc_d)
+  // Calculate the cost for this position (i, j)
+  let cost = compute_cost(one, other, inner_d, i, j)
+  // Update the distance dictionary with the calculated cost
+  dict.insert(inner_d, #(i, j), cost)
 }
