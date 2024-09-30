@@ -35,6 +35,7 @@ pub fn osa_test() {
 
   osa.distance("a", "b")
   |> should.equal(1)
+
   // Test one character, one empty string
   osa.distance("a", "")
   |> should.equal(1)
