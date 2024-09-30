@@ -75,14 +75,9 @@ fn string_to_dict(str: String) -> Dict(Int, String) {
   // Split the string into its graphemes
   let string_graphemes = string.to_graphemes(str)
 
-  // Build a list of tuples where each tuple contains an index and the corresponding character
-  let string_dict =
-    list.index_fold(string_graphemes, [], fn(acc, item, i) {
-      [#(i, item), ..acc]
-    })
-
-  // Convert the list of index-character tuples into a dictionary
-  dict.from_list(string_dict)
+  // Create an index-character dictionary  
+  use acc, character, index <- list.index_fold(string_graphemes, dict.new())
+  dict.insert(acc, index, character)
 }
 
 // A function that gets the minimum of three values (used for the recursive case)
@@ -117,41 +112,33 @@ fn compute_cost(
   j: Int,
 ) -> Int {
   let cost = match_cost(one, i - 1, other, j - 1)
-  // Calculate deletion cost
-  let d_i1j = get_cost(d, i - 1, j) + 1
+
   // Calculate insertion cost
-  let d_ij1 = get_cost(d, i, j - 1) + 1
+  let assert Ok(d_ij1) = dict.get(d, #(i, j - 1))
+
+  // Calculate deletion cost
+  let assert Ok(d_i1j) = dict.get(d, #(i - 1, j))
+
   // Calculate substitution cost
-  let d_i1j1 = get_cost(d, i - 1, j - 1) + cost
+  let assert Ok(d_i1j1) = dict.get(d, #(i - 1, j - 1))
 
   // Find the minimum cost between insertion, deletion, and substitution
-  let min_cost = min_three(d_i1j, d_ij1, d_i1j1)
+  let min_cost = min_three(d_i1j + 1, d_ij1 + 1, d_i1j1 + cost)
 
   // Finally, take into account the cost of a transposition
   let updated_cost = case i > 1 && j > 1 {
     True -> {
       case check_transposition(one, i - 1, other, j - 1) {
-        True -> int.min(min_cost, get_cost(d, i - 2, j - 2) + 1)
+        True -> {
+          let assert Ok(d_i2j2) = dict.get(d, #(i - 2, j - 2))
+          int.min(min_cost, d_i2j2 + 1)
+        }
         False -> min_cost
       }
     }
     False -> min_cost
   }
   updated_cost
-}
-
-// A function that retrieves an edit cost from the dictionary representing a distance matrix.
-// The function retrieves the cost using the tuple (row_index, column_index) as the key. 
-// The value corresponds to the distance calculated between the substrings: 
-// - 'one' (from position 0 to row_index)
-// - 'other' (from position 0 to column_index) 
-// Since the matrix (and thus the dictionary) is processed iteratively (row-wise and column-wise), 
-// the value at index (row_index, column_index), where row_index < i and column_index < j, 
-// will already be present in the matrix by the time we calculate the value for entry (i, j). We 
-// can thus access this entry with confidence
-fn get_cost(d: Dict(#(Int, Int), Int), row: Int, column: Int) -> Int {
-  let assert Ok(cost) = dict.get(d, #(row, column))
-  cost
 }
 
 // Check if a transposition is valid by comparing adjacent characters in both strings
@@ -173,6 +160,16 @@ fn check_transposition(
   }
 }
 
+fn fold_range(start: Int, end: Int, acc: a, fun: fn(a, Int) -> a) -> a {
+  case start > end {
+    True -> acc
+    False -> {
+      let updated_acc = fun(acc, start)
+      fold_range(start + 1, end, updated_acc, fun)
+    }
+  }
+}
+
 // Compute the edit distance by filling the distance matrix with the minimum costs
 fn compute_distances(
   one: Dict(Int, String),
@@ -182,21 +179,23 @@ fn compute_distances(
   n: Int,
 ) -> Dict(#(Int, Int), Int) {
   // Initialize base cases, to avoid continuously checking these later on
-  // Fixing i = 0 or j = 0, set the value of transforming one string into the other
+  // Fixing i = 0 or j = 0, set the cost of transforming one string into the other
   let d = {
-    use acc_d, i <- list.fold(list.range(0, m), d)
-    dict.insert(acc_d, #(i, 0), i)
+    use acc, i <- fold_range(0, m, d)
+    dict.insert(acc, #(i, 0), i)
   }
   let d = {
-    use acc_d, j <- list.fold(list.range(0, n), d)
-    dict.insert(acc_d, #(0, j), j)
+    use acc, j <- fold_range(1, n, d)
+    dict.insert(acc, #(0, j), j)
   }
 
   // Iterate over the matrix to calculate the minimum costs for all substrings
-  use acc_d, i <- list.fold(list.range(1, m), d)
-  use inner_d, j <- list.fold(list.range(1, n), acc_d)
+  use acc, i <- fold_range(1, m, d)
+  use acc, j <- fold_range(1, n, acc)
+
   // Calculate the cost for this position (i, j)
-  let cost = compute_cost(one, other, inner_d, i, j)
+  let cost = compute_cost(one, other, acc, i, j)
+
   // Update the distance dictionary with the calculated cost
-  dict.insert(inner_d, #(i, j), cost)
+  dict.insert(acc, #(i, j), cost)
 }

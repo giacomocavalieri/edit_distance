@@ -11,6 +11,7 @@ pub fn osa_test() {
   // Test symmetry
   osa.distance("a", "bbb")
   |> should.equal(3)
+
   osa.distance("bbb", "a")
   |> should.equal(3)
 
@@ -34,7 +35,6 @@ pub fn osa_test() {
 
   osa.distance("a", "b")
   |> should.equal(1)
-
   // Test one character, one empty string
   osa.distance("a", "")
   |> should.equal(1)
