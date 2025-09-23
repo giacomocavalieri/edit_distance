@@ -1,7 +1,7 @@
-import gleam/string
-import gleeunit/should
 import blah/lorem
 import edit_distance/levenshtein
+import gleam/string
+import gleeunit/should
 
 const tries = 1000
 
