@@ -4,7 +4,6 @@ description = "A pure Gleam package to compute the edit distance of two strings"
 
 licences = ["Apache-2.0"]
 repository = { type = "github", user = "giacomocavalieri", repo = "edit_distance" }
-gleam = ">= 0.32.0"
 
 [dependencies]
 gleam_stdlib = "~> 0.34 or ~> 1.0"

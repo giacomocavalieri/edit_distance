@@ -1,7 +1,6 @@
 import blah/lorem
 import edit_distance/levenshtein
 import gleam/string
-import gleeunit/should
 
 const tries = 1000
 
@@ -18,8 +17,7 @@ fn repeat(times n: Int, action fun: fn() -> a) -> Nil {
 pub fn distance_between_equal_strings_test() -> Nil {
   use <- repeat(tries)
   let string = lorem.word()
-  levenshtein.distance(string, string)
-  |> should.equal(0)
+  assert 0 == levenshtein.distance(string, string)
 }
 
 pub fn distance_with_empty_string_test() -> Nil {
@@ -27,46 +25,25 @@ pub fn distance_with_empty_string_test() -> Nil {
   let string = lorem.word()
   let length = string.length(string)
 
-  levenshtein.distance(string, "")
-  |> should.equal(length)
-
-  levenshtein.distance("", string)
-  |> should.equal(length)
+  assert length == levenshtein.distance(string, "")
+  assert length == levenshtein.distance("", string)
 }
 
 pub fn distance_is_commutative_test() -> Nil {
   use <- repeat(tries)
   let one = lorem.word()
   let other = lorem.word()
-  levenshtein.distance(one, other)
-  |> should.equal(levenshtein.distance(other, one))
+  assert levenshtein.distance(one, other) == levenshtein.distance(other, one)
 }
 
 pub fn known_distances_test() -> Nil {
-  levenshtein.distance("kitten", "sitten")
-  |> should.equal(1)
-
-  levenshtein.distance("sitten", "sittin")
-  |> should.equal(1)
-
-  levenshtein.distance("sittin", "sitting")
-  |> should.equal(1)
-
-  levenshtein.distance("sitting", "sittings")
-  |> should.equal(1)
-
-  levenshtein.distance("kitten", "sitting")
-  |> should.equal(3)
-
-  levenshtein.distance("flaw", "lawn")
-  |> should.equal(2)
-
-  levenshtein.distance("giacomo", "tommaso")
-  |> should.equal(6)
-
-  levenshtein.distance("gleam", "beam")
-  |> should.equal(2)
-
-  levenshtein.distance("this", "that")
-  |> should.equal(2)
+  assert 1 == levenshtein.distance("kitten", "sitten")
+  assert 1 == levenshtein.distance("sitten", "sittin")
+  assert 1 == levenshtein.distance("sittin", "sitting")
+  assert 1 == levenshtein.distance("sitting", "sittings")
+  assert 3 == levenshtein.distance("kitten", "sitting")
+  assert 2 == levenshtein.distance("flaw", "lawn")
+  assert 6 == levenshtein.distance("giacomo", "tommaso")
+  assert 2 == levenshtein.distance("gleam", "beam")
+  assert 2 == levenshtein.distance("this", "that")
 }
