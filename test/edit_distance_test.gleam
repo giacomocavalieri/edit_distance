@@ -36,6 +36,12 @@ pub fn known_distances_test() -> Nil {
   assert 6 == edit_distance.levenshtein("giacomo", "tommaso")
   assert 2 == edit_distance.levenshtein("gleam", "beam")
   assert 2 == edit_distance.levenshtein("this", "that")
+  assert 1 == edit_distance.levenshtein("a", "b")
+  assert 1 == edit_distance.levenshtein("a", "ab")
+  assert 1 == edit_distance.levenshtein("ab", "a")
+  assert 2 == edit_distance.levenshtein("a", "abc")
+  assert 2 == edit_distance.levenshtein("abc", "a")
+  assert 0 == edit_distance.levenshtein("a", "a")
 }
 
 // --- HELPER FUNCTIONS --------------------------------------------------------

@@ -1,6 +1,6 @@
 # Changelog
 
-## v3.0.0 - unreleased
+## v3.0.0 - 2025-09-28
 
 - The `distance` function in the `edit_distance/levenshtein` has been removed
   and replaced by the `levenshtein` function in the `edit_distance` module.
