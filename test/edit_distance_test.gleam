@@ -1,4 +1,5 @@
 import edit_distance
+import gleam/int
 import gleam/string
 import gleeunit
 import prng/random
@@ -21,7 +22,12 @@ pub fn distance_with_empty_string_test() -> Nil {
 }
 
 pub fn distance_is_commutative_test() -> Nil {
-  use #(one, other) <- prop(random.pair(random.string(), random.string()))
+  use #(one, other) <- prop({
+    use one <- random.then(random.string())
+    use other <- random.then(random.string())
+    random.constant(#(one, other))
+  })
+
   assert edit_distance.levenshtein(one, other)
     == edit_distance.levenshtein(other, one)
 }
@@ -49,19 +55,22 @@ pub fn known_distances_test() -> Nil {
 const tries = 3000
 
 fn prop(generator: random.Generator(a), run: fn(a) -> b) -> Nil {
-  prop_loop(tries, generator, run)
+  let seed = random.new_seed(int.random(100_000))
+  prop_loop(tries, generator, seed, run)
 }
 
 fn prop_loop(
   remaining: Int,
   generator: random.Generator(a),
+  seed,
   run: fn(a) -> b,
 ) -> Nil {
   case remaining {
     0 -> Nil
     _ -> {
-      run(random.random_sample(generator))
-      prop_loop(remaining - 1, generator, run)
+      let #(value, seed) = random.step(generator, seed)
+      run(value)
+      prop_loop(remaining - 1, generator, seed, run)
     }
   }
 }

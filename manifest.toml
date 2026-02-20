@@ -3,12 +3,11 @@
 
 packages = [
   { name = "gleam_stdlib", version = "0.69.0", build_tools = ["gleam"], requirements = [], otp_app = "gleam_stdlib", source = "hex", outer_checksum = "AAB0962BEBFAA67A2FBEE9EEE218B057756808DC9AF77430F5182C6115B3A315" },
-  { name = "gleam_yielder", version = "1.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleam_yielder", source = "hex", outer_checksum = "8E4E4ECFA7982859F430C57F549200C7749823C106759F4A19A78AEA6687717A" },
   { name = "gleeunit", version = "1.9.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "DA9553CE58B67924B3C631F96FE3370C49EB6D6DC6B384EC4862CC4AAA718F3C" },
-  { name = "prng", version = "4.0.2", build_tools = ["gleam"], requirements = ["gleam_stdlib", "gleam_yielder"], otp_app = "prng", source = "hex", outer_checksum = "9F3DF8D77C49CCA4F836DC11413C04CC2D7976554DADD09DE566422A40D7AEBD" },
+  { name = "prng", version = "5.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "prng", source = "hex", outer_checksum = "29DA88BCFB54D06DD1472951DF101E9524878056D139DA2616B04350B403CE10" },
 ]
 
 [requirements]
 gleam_stdlib = { version = ">= 0.34.0 and < 2.0.0" }
 gleeunit = { version = ">= 1.0.0 and < 2.0.0" }
-prng = { version = ">= 4.0.1 and < 5.0.0" }
+prng = { version = ">= 5.1.0 and < 6.0.0" }
