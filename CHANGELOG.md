@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.0.1 - 2026-02-20
+
+- Removed usage of deprecated `list.range` function.
+
 ## v3.0.0 - 2025-09-28
 
 - The `distance` function in the `edit_distance/levenshtein` has been removed
