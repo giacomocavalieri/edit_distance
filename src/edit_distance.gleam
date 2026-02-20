@@ -28,7 +28,7 @@ pub fn levenshtein(one: String, other: String) -> Int {
       // We start with a list with `[0, 1, 2, ...]` becase that's the edit
       // distance from the empty prefix of the first string (our starting point)
       // and the distance with any prefix of the second string.
-      let distance_list = list.range(0, list.length(other))
+      let distance_list = int.range(list.length(other), -1, [], list.prepend)
       levenshtein_loop(one, other, distance_list, 0)
     }
   }
